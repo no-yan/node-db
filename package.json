@@ -17,6 +17,7 @@
   },
   "homepage": "https://github.com/no-yan/node-db#readme",
   "dependencies": {
+    "ejs": "^3.1.9",
     "express": "^4.18.2",
     "ioredis": "^5.3.1"
   }
