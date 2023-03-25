@@ -11,46 +11,20 @@ app.get("/", (req, res) => {
   res.render(path.join(__dirname, "views", "index.ejs"));
 });
 
-const getUsers = async (req) => {
-  const stream = redis.scanStream({
-    match: "users:*",
-    count: 2,
-  });
-  const users = [];
-  for await (const resultKeys of stream) {
-    for (const key of resultKeys) {
-      const value = await redis.get(key);
-      if (value === null) {
-        throw new Error("value in invalid");
-      }
-      const user = JSON.parse(value);
-      users.push(user);
-    }
-  }
-  return { users };
-};
+const usersHandler = require("./handlers/users");
+
 app.get("/users", async (req, res) => {
   try {
-    const users = getUsers(req);
-    res.render(path.join(__dirname, "views", "users.ejs"), { users: users });
+    const locals = await usersHandler.getUsers(req);
+    res.render(path.join(__dirname, "views", "users.ejs"), locals);
   } catch (err) {
     console.error(err);
   }
 });
 
-const getUser = async (req) => {
-  const key = `users:${req.params.id}`;
-  const val = await redis.get(key);
-  if (val === null) {
-    throw Error("id not found");
-  }
-  const user = JSON.parse(val);
-  return user;
-};
-
 app.get("/user/:id", async (req, res) => {
   try {
-    const user = await getUser(req);
+    const user = await usersHandler.getUser(req);
     res.status(200).json(user);
   } catch (err) {
     console.error(err);
@@ -70,7 +44,7 @@ redis.connect().once("ready", async () => {
   }
 });
 
-redis.on("error", (err) => {
+redis.getClient().on("error", (err) => {
   console.error(err);
   process.exit(1);
 });
