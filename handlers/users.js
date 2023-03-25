@@ -2,7 +2,7 @@ const redis = require("../lib/redis");
 /**
  *
  * @param {import("../node_modules/@types/express/").Request} req
- * @returns {Promise<string>}
+ * @returns {Promise<{id: number, name: string}>}
  */
 const getUser = async (req) => {
   // @ts-expect-error
