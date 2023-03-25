@@ -1,19 +1,9 @@
 const Redis = require("ioredis");
 const express = require("express");
 const path = require("path");
-const { redisConfig } = require("./config");
+const redis = require("./lib/redis");
 
 const app = express();
-
-const redis = new Redis(redisConfig);
-const init = async () => {
-  await Promise.all([
-    redis.set("users:1", JSON.stringify({ id: 1, name: "alpha" })),
-    redis.set("users:2", JSON.stringify({ id: 2, name: "bravo" })),
-    redis.set("users:3", JSON.stringify({ id: 3, name: "charlie" })),
-    redis.set("users:4", JSON.stringify({ id: 4, name: "delta" })),
-  ]);
-};
 
 app.use("/static", express.static(path.join(__dirname, "public")));
 
@@ -59,9 +49,9 @@ app.get("/user/:id", async (req, res) => {
   }
 });
 
-redis.once("ready", async () => {
+redis.connect().once("ready", async () => {
   try {
-    await init();
+    await redis.init();
     app.listen(3000, () => {
       console.log("start listening");
     });
