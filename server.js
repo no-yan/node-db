@@ -40,6 +40,9 @@ app.get("/users", async (req, res) => {
     for await (const resultKeys of stream) {
       for (const key of resultKeys) {
         const value = await redis.get(key);
+        if (value === null) {
+          throw new Error("value in invalid");
+        }
         const user = JSON.parse(value);
         users.push(user);
       }
