@@ -1,22 +1,11 @@
 const Redis = require("ioredis");
 const express = require("express");
 const path = require("path");
+const { redisConfig } = require("./config");
 
 const app = express();
 
-const redis = new Redis({
-  port: 6379,
-  host: "localhost",
-  password: process.env.REDIS_PASSWORD,
-  enableOfflineQueue: false,
-});
-
-// const init = async () => {
-//   await redis.rpush("users:list", JSON.stringify({ id: 1, name: "alpha" }));
-//   await redis.rpush("users:list", JSON.stringify({ id: 2, name: "bravo" }));
-//   await redis.rpush("users:list", JSON.stringify({ id: 3, name: "charlie" }));
-//   await redis.rpush("users:list", JSON.stringify({ id: 4, name: "delta" }));
-// };
+const redis = new Redis(redisConfig);
 const init = async () => {
   await Promise.all([
     redis.set("users:1", JSON.stringify({ id: 1, name: "alpha" })),
