@@ -1,5 +1,7 @@
 const Redis = require("ioredis");
 const express = require("express");
+const path = require("path");
+
 const app = express();
 
 const redis = new Redis({
@@ -9,32 +11,52 @@ const redis = new Redis({
   enableOfflineQueue: false,
 });
 
+// const init = async () => {
+//   await redis.rpush("users:list", JSON.stringify({ id: 1, name: "alpha" }));
+//   await redis.rpush("users:list", JSON.stringify({ id: 2, name: "bravo" }));
+//   await redis.rpush("users:list", JSON.stringify({ id: 3, name: "charlie" }));
+//   await redis.rpush("users:list", JSON.stringify({ id: 4, name: "delta" }));
+// };
 const init = async () => {
-  await redis.rpush("users:list", JSON.stringify({ id: 1, name: "alpha" }));
-  await redis.rpush("users:list", JSON.stringify({ id: 2, name: "bravo" }));
-  await redis.rpush("users:list", JSON.stringify({ id: 3, name: "charlie" }));
-  await redis.rpush("users:list", JSON.stringify({ id: 4, name: "delta" }));
+  await Promise.all([
+    redis.set("users:1", JSON.stringify({ id: 1, name: "alpha" })),
+    redis.set("users:2", JSON.stringify({ id: 2, name: "bravo" })),
+    redis.set("users:3", JSON.stringify({ id: 3, name: "charlie" })),
+    redis.set("users:4", JSON.stringify({ id: 4, name: "delta" })),
+  ]);
 };
 
 app.get("/", (req, res) => {
-  res.status(200).send("hello world\n");
+  res.render(path.join(__dirname, "views", "index.ejs"));
 });
 
 app.get("/users", async (req, res) => {
-  const offset = req.query.offset ? Number(req.query.offset) : 0;
-  const usersList = await redis.lrange("users:list", offset, offset + 1);
-
-  const users = usersList.map((user) => {
-    return JSON.parse(user);
-  });
-
-  return { users };
+  try {
+    const stream = redis.scanStream({
+      match: "users:*",
+      count: 2,
+    });
+    const users = [];
+    for await (const resultKeys of stream) {
+      for (const key of resultKeys) {
+        const value = await redis.get(key);
+        const user = JSON.parse(value);
+        users.push(user);
+      }
+    }
+    res.render(path.join(__dirname, "views", "users.ejs"), { users: users });
+  } catch (err) {
+    console.error(err);
+  }
 });
 
 app.get("/user/:id", async (req, res) => {
   try {
     const key = `users:${req.params.id}`;
     const val = await redis.get(key);
+    if (val === null) {
+      throw Error("id not found");
+    }
     const user = JSON.parse(val);
     res.status(200).json(user);
   } catch (err) {
