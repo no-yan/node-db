@@ -26,6 +26,8 @@ const init = async () => {
   ]);
 };
 
+app.use("/static", express.static(path.join(__dirname, "public")));
+
 app.get("/", (req, res) => {
   res.render(path.join(__dirname, "views", "index.ejs"));
 });
